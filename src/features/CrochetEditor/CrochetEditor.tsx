@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import './CrochetEditor.css'; // Importamos la hoja de estilos
 import type { InteractionMode, GridState } from './types';
 import { useHistory } from './hooks/useHistory';
 import { useGridDrawing } from './hooks/useGridDrawing';
+import { useGridResizeDrag } from './hooks/useGridResizeDrag';
 import { useZoom } from './hooks/useZoom';
 import { Toolbar } from './components/Toolbar';
 import { GridBoard } from './components/GridBoard';
 import { GridMinimap } from './components/GridMiniMap';
-import {
-    increaseLeft, increaseRight, increaseUp, increaseDown,
-    decreaseLeft, decreaseRight, decreaseUp, decreaseDown
-} from './utils/gridResizers';
+import { GridResizeHandle } from './components/GridResizeHandle';
+import { resizeToExactDimensions } from './utils/gridResizers';
 
 const generateEmptyGrid = (w: number, h: number): GridState => ({
     width: w, height: h, cells: Array.from({ length: h }, () => Array(w).fill(false))
@@ -28,49 +26,45 @@ export const CrochetEditor: React.FC = () => {
         grid, mode, saveHistorySnapshot, updatePresentWithoutHistory
     );
 
-    const applyResize = (resizeFn: (g: GridState) => GridState) => {
-        const newGrid = resizeFn(grid);
-        if (newGrid !== grid) saveState(newGrid);
+    const { handlePointerDown, handlePointerMove, handlePointerUp } = useGridResizeDrag(
+        grid, zoom, saveHistorySnapshot, updatePresentWithoutHistory
+    );
+
+    const handleExactResize = (newW: number, newH: number) => {
+        const newGrid = resizeToExactDimensions(grid, newW, newH);
+        if (newGrid !== grid) {
+            saveState(newGrid);
+        }
     };
 
     return (
-        <div className="crochet-editor">
-            <Toolbar
-                mode={mode} setMode={setMode}
-                undo={undo} redo={redo} canUndo={canUndo} canRedo={canRedo}
-                zoom={zoom} zoomIn={zoomIn} zoomOut={zoomOut} resetZoom={resetZoom}
-            />
-            
-            <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
-                <GridMinimap grid={grid} />
-            </div>
-
-            <div className="crochet-layout">
-                <div className="crochet-controls-v">
-                    <button className="crochet-btn" onClick={() => applyResize(increaseLeft)}>+ Izq</button>
-                    <button className="crochet-btn" onClick={() => applyResize(decreaseLeft)}>- Izq</button>
+        <div className="p-4 md:p-8 min-h-screen bg-slate-50 font-sans">
+            <div className="max-w-5xl mx-auto">
+                <Toolbar
+                    mode={mode} setMode={setMode}
+                    undo={undo} redo={redo} canUndo={canUndo} canRedo={canRedo}
+                    zoom={zoom} zoomIn={zoomIn} zoomOut={zoomOut} resetZoom={resetZoom}
+                    gridWidth={grid.width} gridHeight={grid.height} onResizeSubmit={handleExactResize}
+                />
+                
+                <div className="flex justify-center mb-8">
+                    <GridMinimap grid={grid} />
                 </div>
 
-                <div className="crochet-board-wrapper">
-                    <div className="crochet-controls-h">
-                        <button className="crochet-btn" onClick={() => applyResize(increaseUp)}>+ Arriba</button>
-                        <button className="crochet-btn" onClick={() => applyResize(decreaseUp)}>- Arriba</button>
+                <div className="flex justify-center w-full overflow-hidden">
+                    <div className="relative inline-flex p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                        <GridResizeHandle direction="top" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+                        <GridResizeHandle direction="bottom" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+                        <GridResizeHandle direction="left" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+                        <GridResizeHandle direction="right" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+
+                        <div className="flex flex-col items-center gap-2">
+                            <GridBoard
+                                grid={grid} mode={mode} zoom={zoom}
+                                startDrawing={startDrawing} continueDrawing={continueDrawing} stopDrawing={stopDrawing}
+                            />
+                        </div>
                     </div>
-
-                    <GridBoard
-                        grid={grid} mode={mode} zoom={zoom}
-                        startDrawing={startDrawing} continueDrawing={continueDrawing} stopDrawing={stopDrawing}
-                    />
-
-                    <div className="crochet-controls-h">
-                        <button className="crochet-btn" onClick={() => applyResize(increaseDown)}>+ Abajo</button>
-                        <button className="crochet-btn" onClick={() => applyResize(decreaseDown)}>- Abajo</button>
-                    </div>
-                </div>
-
-                <div className="crochet-controls-v">
-                    <button className="crochet-btn" onClick={() => applyResize(increaseRight)}>+ Der</button>
-                    <button className="crochet-btn" onClick={() => applyResize(decreaseRight)}>- Der</button>
                 </div>
             </div>
         </div>
