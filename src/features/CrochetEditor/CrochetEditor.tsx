@@ -3,8 +3,10 @@ import './CrochetEditor.css'; // Importamos la hoja de estilos
 import type { InteractionMode, GridState } from './types';
 import { useHistory } from './hooks/useHistory';
 import { useGridDrawing } from './hooks/useGridDrawing';
+import { useZoom } from './hooks/useZoom';
 import { Toolbar } from './components/Toolbar';
 import { GridBoard } from './components/GridBoard';
+import { GridMinimap } from './components/GridMiniMap';
 import {
     increaseLeft, increaseRight, increaseUp, increaseDown,
     decreaseLeft, decreaseRight, decreaseUp, decreaseDown
@@ -15,8 +17,10 @@ const generateEmptyGrid = (w: number, h: number): GridState => ({
 });
 
 export const CrochetEditor: React.FC = () => {
-    const { current: grid, saveState, updatePresentWithoutHistory, undo, redo, canUndo, canRedo } = useHistory<GridState>(generateEmptyGrid(15, 15));
+    // History con auto-save en localStorage
+    const { current: grid, saveState, updatePresentWithoutHistory, undo, redo, canUndo, canRedo } = useHistory<GridState>(generateEmptyGrid(15, 15), "crochet_editor_grid");
     const [mode, setMode] = useState<InteractionMode>("Draw");
+    const { zoom, zoomIn, zoomOut, resetZoom } = useZoom(1);
 
     const saveHistorySnapshot = () => saveState(grid);
 
@@ -34,7 +38,12 @@ export const CrochetEditor: React.FC = () => {
             <Toolbar
                 mode={mode} setMode={setMode}
                 undo={undo} redo={redo} canUndo={canUndo} canRedo={canRedo}
+                zoom={zoom} zoomIn={zoomIn} zoomOut={zoomOut} resetZoom={resetZoom}
             />
+            
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
+                <GridMinimap grid={grid} />
+            </div>
 
             <div className="crochet-layout">
                 <div className="crochet-controls-v">
@@ -49,7 +58,7 @@ export const CrochetEditor: React.FC = () => {
                     </div>
 
                     <GridBoard
-                        grid={grid} mode={mode}
+                        grid={grid} mode={mode} zoom={zoom}
                         startDrawing={startDrawing} continueDrawing={continueDrawing} stopDrawing={stopDrawing}
                     />
 

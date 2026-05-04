@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 export interface HistoryState<T> {
     past: T[];
@@ -7,12 +7,30 @@ export interface HistoryState<T> {
 }
 
 // Single Responsibility Principle: Only manages time-travel state.
-export function useHistory<T>(initialState: T) {
-    const [history, setHistory] = useState<HistoryState<T>>({
-        past: [],
-        present: initialState,
-        future: []
+export function useHistory<T>(initialState: T, storageKey?: string) {
+    const [history, setHistory] = useState<HistoryState<T>>(() => {
+        if (storageKey) {
+            try {
+                const saved = localStorage.getItem(storageKey);
+                if (saved) {
+                    return { past: [], present: JSON.parse(saved), future: [] };
+                }
+            } catch (e) {
+                console.error("Error reading from localStorage", e);
+            }
+        }
+        return {
+            past: [],
+            present: initialState,
+            future: []
+        };
     });
+
+    useEffect(() => {
+        if (storageKey) {
+            localStorage.setItem(storageKey, JSON.stringify(history.present));
+        }
+    }, [history.present, storageKey]);
 
     const saveState = useCallback((newState: T) => {
         setHistory(prev => ({
