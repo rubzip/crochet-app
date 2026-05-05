@@ -23,11 +23,10 @@ export const GridMinimap: React.FC<GridMinimapProps> = ({ grid, maxWidth = 150 }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Pintamos el fondo (puedes ajustarlo al color de tu interfaz)
-    ctx.fillStyle = '#f1f5f9';
+    ctx.fillStyle = '#f8fafc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Para el minimapa, POR RENDIMIENTO, solo dibujamos las celdas que están pintadas (negras)
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = '#334155';
     
     for (let r = 0; r < grid.height; r++) {
       for (let c = 0; c < grid.width; c++) {

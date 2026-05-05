@@ -10,7 +10,15 @@ interface GridBoardProps {
   zoom: number;
 }
 
-const CELL_SIZE = 30; // Píxeles por cuadrito
+const CELL_SIZE = 28;
+const COLORS = {
+  grid: '#e2e8f0',
+  filled: '#334155',
+  empty: '#ffffff',
+  hover: '#f1f5f9',
+  current: '#3b82f6',
+  currentOutline: '#60a5fa',
+};
 
 export const GridBoard: React.FC<GridBoardProps> = ({ 
   grid, mode, startDrawing, continueDrawing, stopDrawing, zoom 
@@ -28,31 +36,25 @@ export const GridBoard: React.FC<GridBoardProps> = ({
     // Limpiamos el lienzo entero antes de redibujar
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Dibujamos el fondo de la cuadrícula (las líneas grises)
-    ctx.fillStyle = '#ccc'; // Color de las líneas
+    ctx.fillStyle = COLORS.grid;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Iteramos sobre nuestra matriz matemática
     const zoomedCellSize = CELL_SIZE * zoom;
     for (let r = 0; r < grid.height; r++) {
       for (let c = 0; c < grid.width; c++) {
         const isPainted = grid.cells[r][c];
         
-        // Calculamos la posición X e Y en píxeles
-        // Añadimos +1 y -1 para simular el "gap" (el borde de cada celda)
         const x = c * zoomedCellSize + 1;
         const y = r * zoomedCellSize + 1;
-        const size = zoomedCellSize - 1;
+        const size = zoomedCellSize - 2;
 
-        // Pintamos el cuadrito: Negro si está pintado, Blanco si está vacío
-        ctx.fillStyle = isPainted ? '#333' : '#fff';
+        ctx.fillStyle = isPainted ? COLORS.filled : COLORS.empty;
         ctx.fillRect(x, y, size, size);
       }
     }
   }, [grid, zoom]); // Solo redibuja cuando la matriz o el zoom cambia
 
-  // 2. EL TRADUCTOR DE COORDENADAS (Matemáticas)
-  // Convierte un toque en la pantalla a coordenadas [Fila, Columna]
+  // 2. Coordinate translator
   const getCellFromEvent = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -78,7 +80,7 @@ export const GridBoard: React.FC<GridBoardProps> = ({
     return { r, c };
   }, [grid.width, grid.height, zoom]);
 
-  // 3. MANEJADORES DE EVENTOS
+  // 3. Event handlers
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (e.pointerType === 'mouse') e.preventDefault(); // Evita comportamientos raros del ratón
     const cell = getCellFromEvent(e);
